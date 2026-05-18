@@ -1,30 +1,47 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import { Authenticated, AuthLoading, Unauthenticated, useQuery } from 'convex/react';
+import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
+import { useWorkOSAuth } from '@/auth/workos-auth';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { api } from '@convex/_generated/api';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+function SignInPanel() {
+  const { signIn } = useWorkOSAuth();
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <ThemedView type="backgroundElement" style={styles.panel}>
+      <ThemedText type="subtitle">Authentication required</ThemedText>
+      <ThemedText>
+        Sign in with WorkOS to connect the Expo client to Convex with a verified JWT.
+      </ThemedText>
+      <Pressable accessibilityRole="button" onPress={signIn} style={styles.primaryButton}>
+        <ThemedText style={styles.primaryButtonText}>Sign in</ThemedText>
+      </Pressable>
+    </ThemedView>
+  );
+}
+
+function ViewerPanel() {
+  const { signOut, organizationId } = useWorkOSAuth();
+  const viewer = useQuery(api.users.viewer);
+  const email = viewer?.profile?.email ?? viewer?.identity.email ?? 'Signed in';
+
+  return (
+    <ThemedView type="backgroundElement" style={styles.panel}>
+      <ThemedText type="subtitle">{email}</ThemedText>
+      <ThemedText type="small">
+        Convex authenticated this session with WorkOS subject {viewer?.identity.subject}.
+      </ThemedText>
+      <ThemedText type="small">
+        Organization: {viewer?.profile?.organizationId ?? organizationId ?? 'none'}
+      </ThemedText>
+      <Pressable accessibilityRole="button" onPress={signOut} style={styles.secondaryButton}>
+        <ThemedText>Sign out</ThemedText>
+      </Pressable>
+    </ThemedView>
   );
 }
 
@@ -32,30 +49,29 @@ export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
+        <ThemedView style={styles.header}>
           <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
+            Expo Convex WorkOS Starter
+          </ThemedText>
+          <ThemedText style={styles.subtitle}>
+            Expo mobile, WorkOS identity, Convex realtime data.
           </ThemedText>
         </ThemedView>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+        <AuthLoading>
+          <ThemedView type="backgroundElement" style={styles.panel}>
+            <ActivityIndicator />
+            <ThemedText>Checking session</ThemedText>
+          </ThemedView>
+        </AuthLoading>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+        <Unauthenticated>
+          <SignInPanel />
+        </Unauthenticated>
 
-        {Platform.OS === 'web' && <WebBadge />}
+        <Authenticated>
+          <ViewerPanel />
+        </Authenticated>
       </SafeAreaView>
     </ThemedView>
   );
@@ -70,29 +86,47 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
+    justifyContent: 'center',
+    gap: Spacing.four,
     paddingBottom: BottomTabInset + Spacing.three,
     maxWidth: MaxContentWidth,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+  header: {
+    gap: Spacing.two,
   },
   title: {
-    textAlign: 'center',
+    textAlign: 'left',
   },
-  code: {
-    textTransform: 'uppercase',
+  subtitle: {
+    maxWidth: 480,
   },
-  stepContainer: {
+  panel: {
     gap: Spacing.three,
     alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
+    paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+    borderRadius: Spacing.two,
+  },
+  primaryButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#208AEF',
+    borderRadius: Spacing.two,
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.four,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  secondaryButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius: Spacing.two,
+    borderWidth: StyleSheet.hairlineWidth,
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.four,
   },
 });

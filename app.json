@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "aif-app-1",
-    "slug": "aif-app-1",
+    "name": "expo-convex-workos-starter",
+    "slug": "expo-convex-workos-starter",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "aifapp1",
+    "scheme": "expo-convex-workos-starter",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"
@@ -34,7 +34,8 @@
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
